@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -19,8 +20,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
@@ -38,13 +39,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock implements Hammerable, SimpleWaterloggedBlock {
+public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock
+        implements Hammerable, SimpleWaterloggedBlock {
     public static final MapCodec<PillarTrimBlock> CODEC = RecordCodecBuilder.mapCodec(
-        instance -> instance.group(
-            Codec.BOOL.fieldOf("wood").forGetter(PillarTrimBlock::isWood),
-            propertiesCodec()
-        ).apply(instance, PillarTrimBlock::new)
-    );
+            instance -> instance.group(
+                    Codec.BOOL.fieldOf("wood").forGetter(PillarTrimBlock::isWood),
+                    propertiesCodec()).apply(instance, PillarTrimBlock::new));
 
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final IntegerProperty TYPE = IntegerProperty.create("type", 1, 2);
@@ -79,11 +79,11 @@ public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock impl
         super(properties);
         this.wood = wood;
         this.registerDefaultState(this.defaultBlockState()
-            .setValue(TYPE, 1)
-            .setValue(SHAPE, TrimProperty.NORMAL)
-            .setValue(FACING, Direction.NORTH)
-            .setValue(FACE, AttachFace.WALL)
-            .setValue(WATERLOGGED, false));
+                .setValue(TYPE, 1)
+                .setValue(SHAPE, TrimProperty.NORMAL)
+                .setValue(FACING, Direction.NORTH)
+                .setValue(FACE, AttachFace.WALL)
+                .setValue(WATERLOGGED, false));
     }
 
     @Override
@@ -92,13 +92,16 @@ public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock impl
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
+    public VoxelShape getShape(BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
+            @NotNull CollisionContext context) {
         return switch (state.getValue(SHAPE)) {
             case NORMAL -> switch (state.getValue(FACE)) {
                 case FLOOR ->
-                    state.getValue(FACING).getAxis() == Direction.Axis.X ? NORMAL_DOWN_X_AXIS_SHAPE : NORMAL_DOWN_Z_AXIS_SHAPE;
+                    state.getValue(FACING).getAxis() == Direction.Axis.X ? NORMAL_DOWN_X_AXIS_SHAPE
+                            : NORMAL_DOWN_Z_AXIS_SHAPE;
                 case CEILING ->
-                    state.getValue(FACING).getAxis() == Direction.Axis.X ? NORMAL_UP_X_AXIS_SHAPE : NORMAL_UP_Z_AXIS_SHAPE;
+                    state.getValue(FACING).getAxis() == Direction.Axis.X ? NORMAL_UP_X_AXIS_SHAPE
+                            : NORMAL_UP_Z_AXIS_SHAPE;
                 default -> switch (state.getValue(FACING)) {
                     case EAST -> NORMAL_EAST_SHAPE;
                     case SOUTH -> NORMAL_SOUTH_SHAPE;
@@ -118,7 +121,8 @@ public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock impl
             };
             case THIN -> switch (state.getValue(FACE)) {
                 case FLOOR ->
-                    state.getValue(FACING).getAxis() == Direction.Axis.X ? THIN_DOWN_X_AXIS_SHAPE : THIN_DOWN_Z_AXIS_SHAPE;
+                    state.getValue(FACING).getAxis() == Direction.Axis.X ? THIN_DOWN_X_AXIS_SHAPE
+                            : THIN_DOWN_Z_AXIS_SHAPE;
                 case CEILING ->
                     state.getValue(FACING).getAxis() == Direction.Axis.X ? THIN_UP_X_AXIS_SHAPE : THIN_UP_Z_AXIS_SHAPE;
                 default -> switch (state.getValue(FACING)) {
@@ -133,9 +137,12 @@ public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock impl
 
     @Override
     public void onHammer(Level level, BlockPos pos, BlockState state, Direction side, Player user, Vec3 hitPos) {
-        if (user.isShiftKeyDown()) level.setBlockAndUpdate(pos, state.cycle(TYPE));
-        else level.setBlockAndUpdate(pos, state.cycle(SHAPE));
-        level.playSound(null, pos, wood ? ModSoundEvents.HAMMER_WOOD.get() : ModSoundEvents.HAMMER_STONE.get(), SoundSource.BLOCKS, 1, 1);
+        if (user.isShiftKeyDown())
+            level.setBlockAndUpdate(pos, state.cycle(TYPE));
+        else
+            level.setBlockAndUpdate(pos, state.cycle(SHAPE));
+        level.playSound(null, pos, wood ? ModSoundEvents.HAMMER_WOOD.get() : ModSoundEvents.HAMMER_STONE.get(),
+                SoundSource.BLOCKS, 1, 1);
     }
 
     public boolean isWood() {
@@ -148,24 +155,30 @@ public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock impl
     }
 
     @Override
-    public @NotNull BlockState updateShape(BlockState state, @NotNull Direction direction, @NotNull BlockState neighborState, @NotNull LevelAccessor level, @NotNull BlockPos pos, @NotNull BlockPos neighborPos) {
+    public @NotNull BlockState updateShape(BlockState state, LevelReader levelReader,
+            ScheduledTickAccess scheduledTickAccess, BlockPos pos, Direction direction, BlockPos neighborPos,
+            BlockState neighborState, RandomSource randomSource) {
         if (state.getValue(WATERLOGGED)) {
-            level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            scheduledTickAccess.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(levelReader));
         }
-        return super.updateShape(state, direction, neighborState, level, pos, neighborPos);
+        return super.updateShape(state, levelReader, scheduledTickAccess, pos, direction, neighborPos, neighborState,
+                randomSource);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         FluidState fluidState = ctx.getLevel().getFluidState(ctx.getClickedPos());
         BlockState placementState = super.getStateForPlacement(ctx);
-        if (placementState == null) return null;
+        if (placementState == null)
+            return null;
         return placementState.setValue(WATERLOGGED, fluidState.getType().equals(Fluids.WATER));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.HAMMER_USE_SHAPE, ConstantComponents.HAMMER_USE_LOOK_SHIFT);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
+            TooltipFlag tooltipFlag) {
+        TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.HAMMER_USE_SHAPE,
+                ConstantComponents.HAMMER_USE_LOOK_SHIFT);
     }
 
     @Override
@@ -180,44 +193,44 @@ public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock impl
 
     static {
         NORMAL_NORTH_SHAPE = Shapes.join(
-            Block.box(4, 0, 8, 12, 16, 12),
-            Block.box(0, 0, 12, 16, 16, 16),
-            BooleanOp.OR);
+                Block.box(4, 0, 8, 12, 16, 12),
+                Block.box(0, 0, 12, 16, 16, 16),
+                BooleanOp.OR);
 
         NORMAL_EAST_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 4, 16, 16),
-            Block.box(4, 0, 4, 8, 16, 12),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 4, 16, 16),
+                Block.box(4, 0, 4, 8, 16, 12),
+                BooleanOp.OR);
 
         NORMAL_SOUTH_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 16, 16, 4),
-            Block.box(4, 0, 4, 12, 16, 8),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 16, 16, 4),
+                Block.box(4, 0, 4, 12, 16, 8),
+                BooleanOp.OR);
 
         NORMAL_WEST_SHAPE = Shapes.join(
-            Block.box(12, 0, 0, 16, 16, 16),
-            Block.box(8, 0, 4, 12, 16, 12),
-            BooleanOp.OR);
+                Block.box(12, 0, 0, 16, 16, 16),
+                Block.box(8, 0, 4, 12, 16, 12),
+                BooleanOp.OR);
 
         NORMAL_UP_X_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(0, 8, 4, 16, 12, 12),
-            BooleanOp.OR);
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(0, 8, 4, 16, 12, 12),
+                BooleanOp.OR);
 
         NORMAL_UP_Z_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(4, 8, 0, 12, 12, 16),
-            BooleanOp.OR);
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(4, 8, 0, 12, 12, 16),
+                BooleanOp.OR);
 
         NORMAL_DOWN_X_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 16, 4, 16),
-            Block.box(0, 4, 4, 16, 8, 12),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 16, 4, 16),
+                Block.box(0, 4, 4, 16, 8, 12),
+                BooleanOp.OR);
 
         NORMAL_DOWN_Z_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 16, 4, 16),
-            Block.box(4, 4, 0, 12, 8, 16),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 16, 4, 16),
+                Block.box(4, 4, 0, 12, 8, 16),
+                BooleanOp.OR);
 
         THICC_NORTH_SHAPE = Block.box(0, 0, 8, 16, 16, 16);
         THICC_EAST_SHAPE = Block.box(0, 0, 0, 8, 16, 16);
@@ -228,43 +241,43 @@ public class PillarTrimBlock extends FaceAttachedHorizontalDirectionalBlock impl
         THICC_DOWN_SHAPE = Block.box(0, 0, 0, 16, 8, 16);
 
         THIN_NORTH_SHAPE = Shapes.join(
-            Block.box(6, 0, 10, 10, 16, 12),
-            Block.box(0, 0, 12, 16, 16, 16),
-            BooleanOp.OR);
+                Block.box(6, 0, 10, 10, 16, 12),
+                Block.box(0, 0, 12, 16, 16, 16),
+                BooleanOp.OR);
 
         THIN_EAST_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 4, 16, 16),
-            Block.box(4, 0, 6, 6, 16, 10),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 4, 16, 16),
+                Block.box(4, 0, 6, 6, 16, 10),
+                BooleanOp.OR);
 
         THIN_SOUTH_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 16, 16, 4),
-            Block.box(6, 0, 4, 10, 16, 6),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 16, 16, 4),
+                Block.box(6, 0, 4, 10, 16, 6),
+                BooleanOp.OR);
 
         THIN_WEST_SHAPE = Shapes.join(
-            Block.box(12, 0, 0, 16, 16, 16),
-            Block.box(10, 0, 6, 12, 16, 10),
-            BooleanOp.OR);
+                Block.box(12, 0, 0, 16, 16, 16),
+                Block.box(10, 0, 6, 12, 16, 10),
+                BooleanOp.OR);
 
         THIN_UP_X_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(0, 10, 6, 16, 12, 10),
-            BooleanOp.OR);
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(0, 10, 6, 16, 12, 10),
+                BooleanOp.OR);
 
         THIN_UP_Z_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(6, 10, 0, 10, 12, 16),
-            BooleanOp.OR);
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(6, 10, 0, 10, 12, 16),
+                BooleanOp.OR);
 
         THIN_DOWN_X_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 16, 4, 16),
-            Block.box(0, 4, 6, 16, 6, 10),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 16, 4, 16),
+                Block.box(0, 4, 6, 16, 6, 10),
+                BooleanOp.OR);
 
         THIN_DOWN_Z_AXIS_SHAPE = Shapes.join(
-            Block.box(0, 0, 0, 16, 4, 16),
-            Block.box(6, 4, 0, 10, 6, 16),
-            BooleanOp.OR);
+                Block.box(0, 0, 0, 16, 4, 16),
+                Block.box(6, 4, 0, 10, 6, 16),
+                BooleanOp.OR);
     }
 }

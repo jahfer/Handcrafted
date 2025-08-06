@@ -9,9 +9,10 @@ import earth.terrarium.handcrafted.common.utils.TooltipUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +20,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -43,7 +45,8 @@ import java.util.stream.Stream;
 public class TableBlock extends Block implements SimpleWaterloggedBlock {
     public static final EnumProperty<TableProperty> SHAPE = EnumProperty.create("shape", TableProperty.class);
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
-    public static final EnumProperty<OptionalColorProperty> COLOR = EnumProperty.create("color", OptionalColorProperty.class);
+    public static final EnumProperty<OptionalColorProperty> COLOR = EnumProperty.create("color",
+            OptionalColorProperty.class);
 
     public static final VoxelShape SINGLE_SHAPE;
     public static final VoxelShape CENTER_SHAPE;
@@ -59,10 +62,9 @@ public class TableBlock extends Block implements SimpleWaterloggedBlock {
     public TableBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
-            .setValue(SHAPE, TableProperty.SINGLE)
-            .setValue(WATERLOGGED, false)
-            .setValue(COLOR, OptionalColorProperty.NONE)
-        );
+                .setValue(SHAPE, TableProperty.SINGLE)
+                .setValue(WATERLOGGED, false)
+                .setValue(COLOR, OptionalColorProperty.NONE));
     }
 
     @Override
@@ -79,7 +81,8 @@ public class TableBlock extends Block implements SimpleWaterloggedBlock {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+            InteractionHand hand, BlockHitResult hitResult) {
         return InteractionUtils.interactOptionalSheet(state, level, pos, player, stack, COLOR);
     }
 
@@ -105,14 +108,17 @@ public class TableBlock extends Block implements SimpleWaterloggedBlock {
     }
 
     @Override
-    public @NotNull BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+    public @NotNull BlockState updateShape(BlockState state, LevelReader levelReader,
+            ScheduledTickAccess scheduledTickAccess,
+            BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState,
+            RandomSource randomSource) {
         if (state.getValue(WATERLOGGED)) {
-            level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            scheduledTickAccess.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(levelReader));
         }
 
-        return direction.getAxis().isHorizontal() ?
-            state.setValue(SHAPE, getShape(level, currentPos)) :
-            super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+        return direction.getAxis().isHorizontal() ? state.setValue(SHAPE, getShape(levelReader, currentPos))
+                : super.updateShape(state, levelReader, scheduledTickAccess, currentPos, direction, neighborPos,
+                        neighborState, randomSource);
     }
 
     @Override
@@ -120,7 +126,7 @@ public class TableBlock extends Block implements SimpleWaterloggedBlock {
         BlockPos pos = context.getClickedPos();
         FluidState fluidState = context.getLevel().getFluidState(pos);
         BlockState state = this.defaultBlockState()
-            .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
+                .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
         return state.setValue(SHAPE, getShape(context.getLevel(), pos));
     }
 
@@ -130,42 +136,57 @@ public class TableBlock extends Block implements SimpleWaterloggedBlock {
         boolean southPresent = level.getBlockState(pos.relative(Direction.SOUTH)).is(ModBlockTags.TABLE_CONNECTABLE);
         boolean westPresent = level.getBlockState(pos.relative(Direction.WEST)).is(ModBlockTags.TABLE_CONNECTABLE);
 
-        if (northPresent && eastPresent && southPresent && westPresent) return TableProperty.CENTER;
+        if (northPresent && eastPresent && southPresent && westPresent)
+            return TableProperty.CENTER;
 
-        if (northPresent && eastPresent && southPresent) return TableProperty.WEST_CENTER;
-        if (northPresent && eastPresent && westPresent) return TableProperty.SOUTH_CENTER;
-        if (northPresent && southPresent && westPresent) return TableProperty.EAST_CENTER;
-        if (eastPresent && southPresent && westPresent) return TableProperty.NORTH_CENTER;
+        if (northPresent && eastPresent && southPresent)
+            return TableProperty.WEST_CENTER;
+        if (northPresent && eastPresent && westPresent)
+            return TableProperty.SOUTH_CENTER;
+        if (northPresent && southPresent && westPresent)
+            return TableProperty.EAST_CENTER;
+        if (eastPresent && southPresent && westPresent)
+            return TableProperty.NORTH_CENTER;
 
-        if (northPresent && southPresent) return TableProperty.EAST_WEST_CENTER;
-        if (eastPresent && westPresent) return TableProperty.NORTH_SOUTH_CENTER;
+        if (northPresent && southPresent)
+            return TableProperty.EAST_WEST_CENTER;
+        if (eastPresent && westPresent)
+            return TableProperty.NORTH_SOUTH_CENTER;
 
-        if (northPresent && eastPresent) return TableProperty.SOUTH_WEST_CORNER;
-        if (eastPresent && southPresent) return TableProperty.NORTH_WEST_CORNER;
-        if (southPresent && westPresent) return TableProperty.NORTH_EAST_CORNER;
-        if (westPresent && northPresent) return TableProperty.SOUTH_EAST_CORNER;
+        if (northPresent && eastPresent)
+            return TableProperty.SOUTH_WEST_CORNER;
+        if (eastPresent && southPresent)
+            return TableProperty.NORTH_WEST_CORNER;
+        if (southPresent && westPresent)
+            return TableProperty.NORTH_EAST_CORNER;
+        if (westPresent && northPresent)
+            return TableProperty.SOUTH_EAST_CORNER;
 
-        if (northPresent) return TableProperty.NORTH_SIDE;
-        if (eastPresent) return TableProperty.EAST_SIDE;
-        if (southPresent) return TableProperty.SOUTH_SIDE;
-        if (westPresent) return TableProperty.WEST_SIDE;
+        if (northPresent)
+            return TableProperty.NORTH_SIDE;
+        if (eastPresent)
+            return TableProperty.EAST_SIDE;
+        if (southPresent)
+            return TableProperty.SOUTH_SIDE;
+        if (westPresent)
+            return TableProperty.WEST_SIDE;
 
         return TableProperty.SINGLE;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
+            TooltipFlag tooltipFlag) {
         TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.SHEET);
     }
 
     static {
         SINGLE_SHAPE = Stream.of(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(12, 0, 12, 15, 12, 15),
-            Block.box(12, 0, 1, 15, 12, 4),
-            Block.box(1, 0, 1, 4, 12, 4),
-            Block.box(1, 0, 12, 4, 12, 15)
-        ).reduce(Shapes::or).get();
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(12, 0, 12, 15, 12, 15),
+                Block.box(12, 0, 1, 15, 12, 4),
+                Block.box(1, 0, 1, 4, 12, 4),
+                Block.box(1, 0, 12, 4, 12, 15)).reduce(Shapes::or).get();
 
         CENTER_SHAPE = Block.box(0, 12, 0, 16, 16, 16);
         NORTH_EAST_CORNER_SHAPE = Shapes.or(Block.box(0, 12, 0, 16, 16, 16), Block.box(12, 0, 1, 15, 12, 4));
@@ -174,28 +195,24 @@ public class TableBlock extends Block implements SimpleWaterloggedBlock {
         SOUTH_WEST_CORNER_SHAPE = Shapes.or(Block.box(0, 12, 0, 16, 16, 16), Block.box(1, 0, 12, 4, 12, 15));
 
         NORTH_SIDE_SHAPE = Stream.of(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(12, 0, 12, 15, 12, 15),
-            Block.box(1, 0, 12, 4, 12, 15)
-        ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(12, 0, 12, 15, 12, 15),
+                Block.box(1, 0, 12, 4, 12, 15)).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
 
         EAST_SIDE_SHAPE = Stream.of(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(1, 0, 1, 4, 12, 4),
-            Block.box(1, 0, 12, 4, 12, 15)
-        ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(1, 0, 1, 4, 12, 4),
+                Block.box(1, 0, 12, 4, 12, 15)).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
 
         SOUTH_SIDE_SHAPE = Stream.of(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(12, 0, 1, 15, 12, 4),
-            Block.box(1, 0, 1, 4, 12, 4)
-        ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(12, 0, 1, 15, 12, 4),
+                Block.box(1, 0, 1, 4, 12, 4)).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
 
         WEST_SIDE_SHAPE = Stream.of(
-            Block.box(0, 12, 0, 16, 16, 16),
-            Block.box(12, 0, 12, 15, 12, 15),
-            Block.box(12, 0, 1, 15, 12, 4)
-        ).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
+                Block.box(0, 12, 0, 16, 16, 16),
+                Block.box(12, 0, 12, 15, 12, 15),
+                Block.box(12, 0, 1, 15, 12, 4)).reduce((v1, v2) -> Shapes.join(v1, v2, BooleanOp.OR)).get();
     }
 
     @Override

@@ -8,9 +8,9 @@ plugins {
     java
     id("maven-publish")
     id("com.teamresourceful.resourcefulgradle") version "0.0.+"
-    id("dev.architectury.loom") version "1.6-SNAPSHOT" apply false
+    id("dev.architectury.loom") version "1.9-SNAPSHOT" apply false
     id("architectury-plugin") version "3.4-SNAPSHOT"
-    id("com.github.johnrengelman.shadow") version "7.1.2" apply false
+    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
 }
 
 architectury {
@@ -32,9 +32,7 @@ subprojects {
         archivesName.set("$modId-$modLoader-$minecraftVersion")
     }
 
-    configure<LoomGradleExtensionAPI> {
-        silentMojangMappingsLicense()
-    }
+    // Loom configuration - silentMojangMappingsLicense() removed for newer Loom versions
 
     repositories {
         maven(url = "https://maven.teamresourceful.com/repository/maven-public/")
@@ -52,10 +50,10 @@ subprojects {
 
             officialMojangMappings()
 
-            parchment(create(group = "org.parchmentmc.data", name = "parchment-1.21", version = parchmentVersion))
+            parchment(create(group = "org.parchmentmc.data", name = "parchment-$minecraftVersion", version = parchmentVersion))
         })
 
-        "modApi"(group = "com.teamresourceful.resourcefullib", name = "resourcefullib-$modLoader-1.21", version = resourcefulLibVersion)
+        "modApi"(group = "com.teamresourceful.resourcefullib", name = "resourcefullib-$modLoader-$minecraftVersion", version = resourcefulLibVersion)
     }
 
     java {
@@ -79,9 +77,7 @@ subprojects {
 
     if (!isCommon) {
         apply(plugin = "com.github.johnrengelman.shadow")
-        configure<ArchitectPluginExtension> {
-            platformSetupLoomIde()
-        }
+        // Architect plugin configuration - platformSetupLoomIde() removed for compatibility
 
         val shadowCommon by configurations.creating {
             isCanBeConsumed = false

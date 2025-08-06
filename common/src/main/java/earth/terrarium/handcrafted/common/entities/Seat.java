@@ -14,7 +14,9 @@ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerEntity;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -79,6 +81,12 @@ public class Seat extends Entity {
     @Override
     public boolean isInvulnerable() {
         return true;
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource damageSource, float damage) {
+        // Seats are invulnerable and don't take damage
+        return false;
     }
 
     @Override

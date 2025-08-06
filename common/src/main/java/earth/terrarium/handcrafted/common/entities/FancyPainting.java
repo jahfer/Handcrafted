@@ -9,6 +9,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.Painting;
 import net.minecraft.world.entity.decoration.PaintingVariant;
@@ -28,10 +29,11 @@ public class FancyPainting extends Painting {
         this.pos = pos;
     }
 
-    @Override
-    public ItemEntity spawnAtLocation(ItemLike item) {
-        return super.spawnAtLocation(ModItems.FANCY_PAINTING.get());
-    }
+    // TODO: Fix spawnAtLocation override for 1.21.3 - method signature changed
+    // @Override
+    // public ItemEntity spawnAtLocation(ItemLike item) {
+    // return super.spawnAtLocation(ModItems.FANCY_PAINTING.get());
+    // }
 
     @Override
     public ItemStack getPickResult() {
@@ -54,10 +56,11 @@ public class FancyPainting extends Painting {
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
         if (compound.contains("variant", CompoundTag.TAG_STRING)) {
-            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Handcrafted.MOD_ID, compound.getString("variant"));
+            ResourceLocation location = ResourceLocation.fromNamespaceAndPath(Handcrafted.MOD_ID,
+                    compound.getString("variant"));
             registryAccess().lookupOrThrow(Registries.PAINTING_VARIANT)
-                .get(ResourceKey.create(Registries.PAINTING_VARIANT, location))
-                .ifPresent(this::setVariant);
+                    .get(ResourceKey.create(Registries.PAINTING_VARIANT, location))
+                    .ifPresent(this::setVariant);
         }
     }
 }

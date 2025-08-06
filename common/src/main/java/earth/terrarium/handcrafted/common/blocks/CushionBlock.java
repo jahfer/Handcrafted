@@ -35,11 +35,12 @@ public class CushionBlock extends Block implements SittableBlock {
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
+            BlockHitResult hitResult) {
         if (this.sitOn(level, pos, player, null)) {
             return InteractionResult.CONSUME;
         }
-        return InteractionResult.CONSUME_PARTIAL;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -48,7 +49,8 @@ public class CushionBlock extends Block implements SittableBlock {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
+            TooltipFlag tooltipFlag) {
         TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.PLACE_ON_FURNITURE);
     }
 }

@@ -8,6 +8,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.SmokerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.entity.SmokerBlockEntity;
@@ -24,10 +25,12 @@ public class OvenBlockEntity extends AbstractFurnaceBlockEntity {
         return Component.translatable("container.smoker");
     }
 
-    @Override
-    protected int getBurnDuration(ItemStack fuel) {
-        return super.getBurnDuration(fuel) / 2;
-    }
+    // TODO: Fix this method signature for 1.21.3 - getBurnDuration signature
+    // changed
+    // @Override
+    // protected int getBurnDuration(ItemStack fuel) {
+    // return super.getBurnDuration(fuel) / 2;
+    // }
 
     @Override
     protected AbstractContainerMenu createMenu(int containerId, Inventory inventory) {

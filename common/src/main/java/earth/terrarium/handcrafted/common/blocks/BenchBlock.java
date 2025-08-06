@@ -11,7 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -33,7 +33,8 @@ import java.util.List;
 
 public class BenchBlock extends ModularSeatBlock {
     public static final MapCodec<BenchBlock> CODEC = simpleCodec(BenchBlock::new);
-    public static final EnumProperty<OptionalColorProperty> COLOR = EnumProperty.create("color", OptionalColorProperty.class);
+    public static final EnumProperty<OptionalColorProperty> COLOR = EnumProperty.create("color",
+            OptionalColorProperty.class);
 
     public static final AABB SEAT = new AABB(0, 0, 0, 1, 0.5, 1);
     public static final VoxelShape VOXEL_SHAPE = Block.box(0, 0, 0, 16, 10, 16);
@@ -41,11 +42,10 @@ public class BenchBlock extends ModularSeatBlock {
     public BenchBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
-            .setValue(SHAPE, ModularSeatProperty.SINGLE)
-            .setValue(COLOR, OptionalColorProperty.NONE)
-            .setValue(FACING, net.minecraft.core.Direction.NORTH)
-            .setValue(WATERLOGGED, false)
-        );
+                .setValue(SHAPE, ModularSeatProperty.SINGLE)
+                .setValue(COLOR, OptionalColorProperty.NONE)
+                .setValue(FACING, net.minecraft.core.Direction.NORTH)
+                .setValue(WATERLOGGED, false));
     }
 
     @Override
@@ -78,14 +78,17 @@ public class BenchBlock extends ModularSeatBlock {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        ItemInteractionResult result = InteractionUtils.interactOptionalCushion(state, level, pos, player, stack, COLOR);
-        if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) return result;
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+            InteractionHand hand, BlockHitResult hitResult) {
+        InteractionResult result = InteractionUtils.interactOptionalCushion(state, level, pos, player, stack, COLOR);
+        if (result != InteractionResult.PASS)
+            return result;
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
+            TooltipFlag tooltipFlag) {
         TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.CUSHION);
     }
 }

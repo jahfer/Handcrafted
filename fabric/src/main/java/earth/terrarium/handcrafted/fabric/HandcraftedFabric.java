@@ -27,7 +27,8 @@ public class HandcraftedFabric {
                     .filter(b2 -> b2.getValue(FancyBedBlock.PART) == BedPart.HEAD))
             .collect(Collectors.toSet());
 
-        Holder.Reference<PoiType> holder = BuiltInRegistries.POINT_OF_INTEREST_TYPE.getHolderOrThrow(PoiTypes.HOME);
+        Holder.Reference<PoiType> holder = BuiltInRegistries.POINT_OF_INTEREST_TYPE.get(PoiTypes.HOME)
+                .orElseThrow(() -> new IllegalStateException("Could not find HOME POI type"));
         states.forEach(s -> PoiTypesAccessor.getTypeByState().put(s, holder));
     }
 }

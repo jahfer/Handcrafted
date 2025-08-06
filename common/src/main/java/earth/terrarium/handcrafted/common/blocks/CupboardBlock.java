@@ -14,7 +14,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
@@ -41,9 +41,8 @@ public class CupboardBlock extends HorizontalDirectionalBlock implements Hammera
     public CupboardBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
-            .setValue(FACING, Direction.NORTH)
-            .setValue(TYPE, 1)
-        );
+                .setValue(FACING, Direction.NORTH)
+                .setValue(TYPE, 1));
     }
 
     @Override
@@ -63,20 +62,24 @@ public class CupboardBlock extends HorizontalDirectionalBlock implements Hammera
 
     @Override
     public void onHammer(Level level, BlockPos pos, BlockState state, Direction side, Player user, Vec3 hitPos) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide())
+            return;
         level.setBlockAndUpdate(pos, state.cycle(TYPE));
         level.playSound(null, pos, ModSoundEvents.HAMMER_WOOD.get(), SoundSource.BLOCKS, 1, 1);
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (level.isClientSide()) return ItemInteractionResult.CONSUME_PARTIAL;
-        if (stack.is(ModItems.HAMMER.get())) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+            InteractionHand hand, BlockHitResult hitResult) {
+        if (level.isClientSide())
+            return InteractionResult.SUCCESS;
+        if (stack.is(ModItems.HAMMER.get()))
+            return InteractionResult.PASS;
         if (level.getBlockEntity(pos) instanceof ContainerBlockEntity container) {
             player.openMenu(container);
-            return ItemInteractionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return InteractionResult.PASS;
     }
 
     @Override
@@ -91,11 +94,12 @@ public class CupboardBlock extends HorizontalDirectionalBlock implements Hammera
 
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        return AbstractContainerMenu.getRedstoneSignalFromContainer((Container)level.getBlockEntity(pos));
+        return AbstractContainerMenu.getRedstoneSignalFromContainer((Container) level.getBlockEntity(pos));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
+            TooltipFlag tooltipFlag) {
         TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.HAMMER_USE_LOOK);
     }
 

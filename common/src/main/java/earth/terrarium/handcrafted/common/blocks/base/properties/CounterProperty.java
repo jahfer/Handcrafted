@@ -1,5 +1,6 @@
 package earth.terrarium.handcrafted.common.blocks.base.properties;
 
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
@@ -48,6 +49,9 @@ public enum CounterProperty implements StringRepresentable {
     }
 
     public ItemStack toBlock() {
-        return BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(getSerializedName())).getDefaultInstance();
+        return BuiltInRegistries.ITEM.get(ResourceLocation.withDefaultNamespace(getSerializedName()))
+                .map(Holder.Reference::value)
+                .map(ItemStack::new)
+                .orElse(ItemStack.EMPTY);
     }
 }

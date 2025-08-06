@@ -16,7 +16,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
@@ -46,10 +46,9 @@ public class CounterBlock extends HorizontalDirectionalBlock implements Hammerab
     public CounterBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
-            .setValue(FACING, net.minecraft.core.Direction.NORTH)
-            .setValue(TYPE, 1)
-            .setValue(COUNTER, CounterProperty.CALCITE)
-        );
+                .setValue(FACING, net.minecraft.core.Direction.NORTH)
+                .setValue(TYPE, 1)
+                .setValue(COUNTER, CounterProperty.CALCITE));
     }
 
     @Override
@@ -59,7 +58,8 @@ public class CounterBlock extends HorizontalDirectionalBlock implements Hammerab
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
-        if (!level.isClientSide() && state.getBlock() != newState.getBlock() && !state.getValue(COUNTER).toBlock().is(Items.CALCITE)) {
+        if (!level.isClientSide() && state.getBlock() != newState.getBlock()
+                && !state.getValue(COUNTER).toBlock().is(Items.CALCITE)) {
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), state.getValue(COUNTER).toBlock());
         }
         if (state.getBlock() != newState.getBlock()) {
@@ -74,15 +74,17 @@ public class CounterBlock extends HorizontalDirectionalBlock implements Hammerab
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        ItemInteractionResult result = InteractionUtils.interactCounter(state, level, pos, player, stack, COUNTER);
-        if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION || !(level.getBlockEntity(pos) instanceof ContainerBlockEntity container)) {
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+            InteractionHand hand, BlockHitResult hitResult) {
+        InteractionResult result = InteractionUtils.interactCounter(state, level, pos, player, stack, COUNTER);
+        if (result != InteractionResult.PASS
+                || !(level.getBlockEntity(pos) instanceof ContainerBlockEntity container)) {
             return result;
         } else if (stack.is(ModItems.HAMMER.get())) {
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return InteractionResult.PASS;
         }
         player.openMenu(container);
-        return ItemInteractionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -97,7 +99,8 @@ public class CounterBlock extends HorizontalDirectionalBlock implements Hammerab
 
     @Override
     public void onHammer(Level level, BlockPos pos, BlockState state, Direction side, Player user, Vec3 hitPos) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide())
+            return;
         level.setBlockAndUpdate(pos, state.cycle(TYPE));
         level.playSound(null, pos, ModSoundEvents.HAMMER_WOOD.get(), SoundSource.BLOCKS, 1, 1);
     }
@@ -114,11 +117,13 @@ public class CounterBlock extends HorizontalDirectionalBlock implements Hammerab
 
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
-        return AbstractContainerMenu.getRedstoneSignalFromContainer((Container)level.getBlockEntity(pos));
+        return AbstractContainerMenu.getRedstoneSignalFromContainer((Container) level.getBlockEntity(pos));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.COUNTER, ConstantComponents.HAMMER_USE_LOOK);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
+            TooltipFlag tooltipFlag) {
+        TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.COUNTER,
+                ConstantComponents.HAMMER_USE_LOOK);
     }
 }

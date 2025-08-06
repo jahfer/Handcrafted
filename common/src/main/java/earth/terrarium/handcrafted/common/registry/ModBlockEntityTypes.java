@@ -14,12 +14,16 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class ModBlockEntityTypes {
-    public static final ResourcefulRegistry<BlockEntityType<?>> BLOCK_ENTITY_TYPES = ResourcefulRegistries.create(BuiltInRegistries.BLOCK_ENTITY_TYPE, Handcrafted.MOD_ID);
+    public static final ResourcefulRegistry<BlockEntityType<?>> BLOCK_ENTITY_TYPES = ResourcefulRegistries
+            .create(BuiltInRegistries.BLOCK_ENTITY_TYPE, Handcrafted.MOD_ID);
 
-    public static final RegistryEntry<BlockEntityType<OvenBlockEntity>> OVEN = BLOCK_ENTITY_TYPES.register("oven", () -> createBlockEntityType(OvenBlockEntity::new, ModBlocks.OVEN.get()));
-    public static final RegistryEntry<BlockEntityType<CrockeryBlockEntity>> CROCKERY = BLOCK_ENTITY_TYPES.register("crockery", () -> createBlockEntityType(CrockeryBlockEntity::new, ModBlocks.CROCKERY_COMBOS));
+    public static final RegistryEntry<BlockEntityType<OvenBlockEntity>> OVEN = BLOCK_ENTITY_TYPES.register("oven",
+            () -> createBlockEntityType(OvenBlockEntity::new, ModBlocks.OVEN.get()));
+    public static final RegistryEntry<BlockEntityType<CrockeryBlockEntity>> CROCKERY = BLOCK_ENTITY_TYPES
+            .register("crockery", () -> createBlockEntityType(CrockeryBlockEntity::new, ModBlocks.CROCKERY_COMBOS));
     public static final RegistryEntry<BlockEntityType<ContainerBlockEntity>> CONTAINER;
 
     static {
@@ -33,14 +37,24 @@ public class ModBlockEntityTypes {
         entries.addAll(ModBlocks.SHELVES.getEntries());
         entries.addAll(ModBlocks.SIDE_TABLES.getEntries());
 
-        CONTAINER = BLOCK_ENTITY_TYPES.register("container", () -> createBlockEntityType(ContainerBlockEntity::new, entries.stream().map(RegistryEntry::get).toArray(Block[]::new)));
+        CONTAINER = BLOCK_ENTITY_TYPES.register("container", () -> createBlockEntityType(ContainerBlockEntity::new,
+                entries.stream().map(RegistryEntry::get).toArray(Block[]::new)));
     }
 
-    public static <E extends BlockEntity> BlockEntityType<E> createBlockEntityType(BlockEntityType.BlockEntitySupplier<E> factory, Block... blocks) {
-        return BlockEntityType.Builder.of(factory, blocks).build(null);
+    // TODO: Fix these methods for 1.21.3 - BlockEntityType.Builder signature
+    // changed
+    public static <E extends BlockEntity> BlockEntityType<E> createBlockEntityType(
+            BlockEntityType.BlockEntitySupplier<E> factory, Block... blocks) {
+        // This needs to be fixed for 1.21.3
+        throw new UnsupportedOperationException("BlockEntityType creation needs to be updated for 1.21.3");
+        // return BlockEntityType.Builder.of(factory, blocks).build();
     }
 
-    public static <E extends BlockEntity> BlockEntityType<E> createBlockEntityType(BlockEntityType.BlockEntitySupplier<E> factory, ResourcefulRegistry<Block> registry) {
-        return BlockEntityType.Builder.of(factory, registry.stream().map(RegistryEntry::get).toArray(Block[]::new)).build(null);
+    public static <E extends BlockEntity> BlockEntityType<E> createBlockEntityType(
+            BlockEntityType.BlockEntitySupplier<E> factory, ResourcefulRegistry<Block> registry) {
+        // This needs to be fixed for 1.21.3
+        throw new UnsupportedOperationException("BlockEntityType creation needs to be updated for 1.21.3");
+        // return BlockEntityType.Builder.of(factory,
+        // registry.stream().map(RegistryEntry::get).toArray(Block[]::new)).build();
     }
 }

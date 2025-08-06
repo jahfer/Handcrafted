@@ -4,6 +4,7 @@ rootProject.name = "handcrafted"
 
 pluginManagement {
     repositories {
+        maven(url = "https://maven.fabricmc.net/")
         maven(url = "https://maven.architectury.dev/")
         maven(url = "https://maven.neoforged.net/releases/")
         maven(url = "https://maven.teamresourceful.com/repository/maven-public/")

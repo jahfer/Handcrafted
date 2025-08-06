@@ -8,9 +8,10 @@ import earth.terrarium.handcrafted.common.utils.TooltipUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -19,7 +20,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -42,7 +44,8 @@ import java.util.List;
 public class FancyBedBlock extends BedBlock {
     public static final EnumProperty<BedPart> PART = BlockStateProperties.BED_PART;
     public static final BooleanProperty OCCUPIED = BlockStateProperties.OCCUPIED;
-    public static final EnumProperty<DirectionalBlockProperty> SHAPE = EnumProperty.create("shape", DirectionalBlockProperty.class);
+    public static final EnumProperty<DirectionalBlockProperty> SHAPE = EnumProperty.create("shape",
+            DirectionalBlockProperty.class);
     public static final EnumProperty<ColorProperty> COLOR = EnumProperty.create("color", ColorProperty.class);
 
     public static final VoxelShape VOXEL_SHAPE = Block.box(0, 0, 0, 16, 9, 16);
@@ -50,21 +53,20 @@ public class FancyBedBlock extends BedBlock {
     public FancyBedBlock(Properties properties) {
         super(DyeColor.WHITE, properties);
         registerDefaultState(defaultBlockState()
-            .setValue(FACING, net.minecraft.core.Direction.NORTH)
-            .setValue(PART, BedPart.FOOT)
-            .setValue(OCCUPIED, false)
-            .setValue(SHAPE, DirectionalBlockProperty.SINGLE)
-            .setValue(COLOR, ColorProperty.WHITE)
-        );
+                .setValue(FACING, net.minecraft.core.Direction.NORTH)
+                .setValue(PART, BedPart.FOOT)
+                .setValue(OCCUPIED, false)
+                .setValue(SHAPE, DirectionalBlockProperty.SINGLE)
+                .setValue(COLOR, ColorProperty.WHITE));
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
-        if (!level.isClientSide() && state.getBlock() != newState.getBlock() && state.getValue(COLOR) != ColorProperty.WHITE) {
+        if (!level.isClientSide() && state.getBlock() != newState.getBlock()
+                && state.getValue(COLOR) != ColorProperty.WHITE) {
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
-                state.getValue(PART) == BedPart.FOOT ?
-                    state.getValue(COLOR).toSheet() :
-                    state.getValue(COLOR).toCushion());
+                    state.getValue(PART) == BedPart.FOOT ? state.getValue(COLOR).toSheet()
+                            : state.getValue(COLOR).toCushion());
         }
         super.onRemove(state, level, pos, newState, moved);
     }
@@ -90,14 +92,19 @@ public class FancyBedBlock extends BedBlock {
     }
 
     @Override
-    public @NotNull BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+    public @NotNull BlockState updateShape(BlockState state, LevelReader levelReader,
+            ScheduledTickAccess scheduledTickAccess,
+            BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState,
+            RandomSource randomSource) {
         if (direction == getNeighbourDirection(state.getValue(PART), state.getValue(FACING))) {
             return neighborState.is(this) && neighborState.getValue(PART) != state.getValue(PART) ? state
-                .setValue(OCCUPIED, neighborState.getValue(OCCUPIED))
-                .setValue(SHAPE, getShape(this, state.getValue(FACING), level, pos)) :
-                Blocks.AIR.defaultBlockState();
+                    .setValue(OCCUPIED, neighborState.getValue(OCCUPIED))
+                    .setValue(SHAPE, getShape(this, state.getValue(FACING), levelReader, currentPos))
+                    : Blocks.AIR.defaultBlockState();
         } else {
-            return super.updateShape(state.setValue(SHAPE, getShape(this, state.getValue(FACING), level, pos)), direction, neighborState, level, pos, neighborPos);
+            return super.updateShape(
+                    state.setValue(SHAPE, getShape(this, state.getValue(FACING), levelReader, currentPos)),
+                    levelReader, scheduledTickAccess, currentPos, direction, neighborPos, neighborState, randomSource);
         }
     }
 
@@ -110,10 +117,11 @@ public class FancyBedBlock extends BedBlock {
 
         Level level = context.getLevel();
         return level.getBlockState(relativePos).canBeReplaced(context) &&
-            level.getWorldBorder().isWithinBounds(relativePos) ?
-            this.defaultBlockState()
-                .setValue(FACING, direction)
-                .setValue(SHAPE, getShape(this, direction, level, pos)) : null;
+                level.getWorldBorder().isWithinBounds(relativePos)
+                        ? this.defaultBlockState()
+                                .setValue(FACING, direction)
+                                .setValue(SHAPE, getShape(this, direction, level, pos))
+                        : null;
     }
 
     private Direction getNeighbourDirection(BedPart part, Direction direction) {
@@ -121,11 +129,13 @@ public class FancyBedBlock extends BedBlock {
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        ItemInteractionResult result = state.getValue(PART) == BedPart.HEAD ?
-            InteractionUtils.interactCushion(state, level, pos, player, stack, COLOR) :
-            InteractionUtils.interactSheet(state, level, pos, player, stack, COLOR);
-        if (result != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) return result;
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+            InteractionHand hand, BlockHitResult hitResult) {
+        InteractionResult result = state.getValue(PART) == BedPart.HEAD
+                ? InteractionUtils.interactCushion(state, level, pos, player, stack, COLOR)
+                : InteractionUtils.interactSheet(state, level, pos, player, stack, COLOR);
+        if (result != InteractionResult.PASS)
+            return result;
         return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
     }
 
@@ -155,7 +165,9 @@ public class FancyBedBlock extends BedBlock {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-        TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.BED_PILLOW, ConstantComponents.BED_SHEET);
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltipComponents,
+            TooltipFlag tooltipFlag) {
+        TooltipUtils.addDescriptionComponent(tooltipComponents, ConstantComponents.BED_PILLOW,
+                ConstantComponents.BED_SHEET);
     }
 }

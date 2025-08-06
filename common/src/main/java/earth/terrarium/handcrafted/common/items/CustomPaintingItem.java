@@ -44,7 +44,8 @@ public class CustomPaintingItem extends HangingEntityItem {
         }
 
         Optional<FancyPainting> optionalPainting = create(level, pos2, direction);
-        if (optionalPainting.isEmpty()) return InteractionResult.CONSUME;
+        if (optionalPainting.isEmpty())
+            return InteractionResult.CONSUME;
         FancyPainting painting = optionalPainting.get();
 
         CustomData customData = stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
@@ -60,7 +61,7 @@ public class CustomPaintingItem extends HangingEntityItem {
             }
 
             stack.shrink(1);
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return level.isClientSide ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         } else {
             return InteractionResult.CONSUME;
         }
@@ -69,8 +70,11 @@ public class CustomPaintingItem extends HangingEntityItem {
     private Optional<FancyPainting> create(Level level, BlockPos pos, Direction direction) {
         FancyPainting painting = new FancyPainting(level, pos);
         List<Holder<PaintingVariant>> paintings = new ArrayList<>();
-        level.registryAccess().registryOrThrow(Registries.PAINTING_VARIANT).getTagOrEmpty(variants).forEach(paintings::add);
-        if (paintings.isEmpty()) return Optional.empty();
+        // TODO: Fix registry access for 1.21.3 - registryOrThrow method changed
+        var registry = level.registryAccess().lookupOrThrow(Registries.PAINTING_VARIANT);
+        registry.getTagOrEmpty(variants).forEach(paintings::add);
+        if (paintings.isEmpty())
+            return Optional.empty();
 
         painting.setDirection(direction);
 
@@ -79,12 +83,14 @@ public class CustomPaintingItem extends HangingEntityItem {
             return !painting.survives();
         });
 
-        if (paintings.isEmpty()) return Optional.empty();
+        if (paintings.isEmpty())
+            return Optional.empty();
 
         int area = paintings.stream().mapToInt(CustomPaintingItem::variantArea).max().orElse(0);
         paintings.removeIf(holder -> variantArea(holder) < area);
         Optional<Holder<PaintingVariant>> optional = Util.getRandomSafe(paintings, painting.getRandom());
-        if (optional.isEmpty()) return Optional.empty();
+        if (optional.isEmpty())
+            return Optional.empty();
 
         painting.setVariant(optional.get());
         painting.setDirection(direction);

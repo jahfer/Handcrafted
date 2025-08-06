@@ -3,14 +3,16 @@ package earth.terrarium.handcrafted.common.blocks.base;
 import earth.terrarium.handcrafted.common.blocks.base.properties.ModularSeatProperty;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -23,17 +25,18 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.NotNull;
 
-public abstract class ModularSeatBlock extends HorizontalDirectionalBlock implements SittableBlock, SimpleWaterloggedBlock {
-    public static final EnumProperty<ModularSeatProperty> SHAPE = EnumProperty.create("shape", ModularSeatProperty.class);
+public abstract class ModularSeatBlock extends HorizontalDirectionalBlock
+        implements SittableBlock, SimpleWaterloggedBlock {
+    public static final EnumProperty<ModularSeatProperty> SHAPE = EnumProperty.create("shape",
+            ModularSeatProperty.class);
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     public ModularSeatBlock(Properties properties) {
         super(properties);
         registerDefaultState(defaultBlockState()
-            .setValue(SHAPE, ModularSeatProperty.SINGLE)
-            .setValue(FACING, net.minecraft.core.Direction.NORTH)
-            .setValue(WATERLOGGED, false)
-        );
+                .setValue(SHAPE, ModularSeatProperty.SINGLE)
+                .setValue(FACING, net.minecraft.core.Direction.NORTH)
+                .setValue(WATERLOGGED, false));
     }
 
     @Override
@@ -70,26 +73,35 @@ public abstract class ModularSeatBlock extends HorizontalDirectionalBlock implem
                     return state.rotate(Rotation.CLOCKWISE_180).setValue(SHAPE, shape);
                 }
             }
+            case NONE -> {
+                // No mirroring needed
+            }
         }
 
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     @Override
-    public @NotNull BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
+    public @NotNull BlockState updateShape(BlockState state, LevelReader levelReader,
+            ScheduledTickAccess scheduledTickAccess,
+            BlockPos currentPos, Direction direction, BlockPos neighborPos, BlockState neighborState,
+            RandomSource randomSource) {
         if (state.getValue(WATERLOGGED)) {
-            level.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            scheduledTickAccess.scheduleTick(currentPos, Fluids.WATER, Fluids.WATER.getTickDelay(levelReader));
         }
 
-        return direction.getAxis().isHorizontal() ? state.setValue(SHAPE, getShape(state, level, currentPos)) : super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+        return direction.getAxis().isHorizontal() ? state.setValue(SHAPE, getShape(state, levelReader, currentPos))
+                : super.updateShape(state, levelReader, scheduledTickAccess, currentPos, direction, neighborPos,
+                        neighborState, randomSource);
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player,
+            InteractionHand hand, BlockHitResult hitResult) {
         if (this.sitOn(level, pos, player, state.getValue(FACING))) {
-            return ItemInteractionResult.CONSUME;
+            return InteractionResult.CONSUME;
         }
-        return ItemInteractionResult.CONSUME_PARTIAL;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -97,8 +109,8 @@ public abstract class ModularSeatBlock extends HorizontalDirectionalBlock implem
         BlockPos pos = context.getClickedPos();
         FluidState fluidState = context.getLevel().getFluidState(pos);
         BlockState state = this.defaultBlockState()
-            .setValue(FACING, context.getHorizontalDirection().getOpposite())
-            .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
+                .setValue(FACING, context.getHorizontalDirection().getOpposite())
+                .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
         return state.setValue(SHAPE, getShape(state, context.getLevel(), pos));
     }
 
@@ -114,19 +126,18 @@ public abstract class ModularSeatBlock extends HorizontalDirectionalBlock implem
         if (state1.is(this)) {
             Direction dir = state1.getValue(FACING);
             if (dir.getAxis() != state.getValue(FACING).getAxis() && canTakeShape(state, level, pos, dir)) {
-                return dir == direction.getCounterClockWise() ?
-                    ModularSeatProperty.OUTER_LEFT :
-                    ModularSeatProperty.OUTER_RIGHT;
+                return dir == direction.getCounterClockWise() ? ModularSeatProperty.OUTER_LEFT
+                        : ModularSeatProperty.OUTER_RIGHT;
             }
         }
 
         BlockState state2 = level.getBlockState(pos.relative(direction));
         if (state2.is(this)) {
             Direction dir = state2.getValue(FACING);
-            if (dir.getAxis() != state.getValue(FACING).getAxis() && canTakeShape(state, level, pos, dir.getOpposite())) {
-                return dir == direction.getCounterClockWise() ?
-                    ModularSeatProperty.INNER_LEFT :
-                    ModularSeatProperty.INNER_RIGHT;
+            if (dir.getAxis() != state.getValue(FACING).getAxis()
+                    && canTakeShape(state, level, pos, dir.getOpposite())) {
+                return dir == direction.getCounterClockWise() ? ModularSeatProperty.INNER_LEFT
+                        : ModularSeatProperty.INNER_RIGHT;
             }
         }
 

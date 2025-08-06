@@ -13,7 +13,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class BlockElementMixin {
 
     @Shadow
-    protected abstract Vector3f getVector3f(JsonObject json, String memberName);
+    private Vector3f getVector3f(JsonObject json, String memberName) {
+        throw new AssertionError();
+    }
 
     // Remove rotation limit
     @Inject(method = "getAngle", at = @At("HEAD"), cancellable = true)

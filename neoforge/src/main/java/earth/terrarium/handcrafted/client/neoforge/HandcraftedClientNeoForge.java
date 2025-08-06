@@ -27,7 +27,8 @@ public class HandcraftedClientNeoForge {
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         HandcraftedClient.onRegisterBlockRenderers(new ClientPlatformUtils.BlockRendererRegistry() {
             @Override
-            public <T extends BlockEntity> void register(RegistryEntry<? extends BlockEntityType<? extends T>> type, BlockEntityRendererProvider<T> factory) {
+            public <T extends BlockEntity> void register(RegistryEntry<? extends BlockEntityType<? extends T>> type,
+                    BlockEntityRendererProvider<T> factory) {
                 event.registerBlockEntityRenderer(type.get(), factory);
             }
         });

@@ -64,10 +64,17 @@ public class ModBlockEntityTypes {
 
         public static final RegistryEntry<BlockEntityType<OvenBlockEntity>> OVEN = BLOCK_ENTITY_TYPES.register("oven",
                         () -> createBlockEntityType(OvenBlockEntity::new, ModBlocks.OVEN.get()));
+        // Note: CROCKERY_COMBOS registry is empty because combo blocks were registered
+        // on BLOCKS, not CROCKERY_COMBOS.
+        // Explicitly enumerate the combo blocks so the BlockEntityType has valid blocks
+        // and passes runtime validation.
         public static final RegistryEntry<BlockEntityType<CrockeryBlockEntity>> CROCKERY = BLOCK_ENTITY_TYPES
                         .register("crockery", () -> createBlockEntityType(CrockeryBlockEntity::new,
-                                        ModBlocks.CROCKERY_COMBOS.stream().map(RegistryEntry::get)
-                                                        .toArray(net.minecraft.world.level.block.Block[]::new)));
+                                        ModBlocks.WHITE_CROCKERY_COMBO.get(),
+                                        ModBlocks.YELLOW_CROCKERY_COMBO.get(),
+                                        ModBlocks.BLUE_CROCKERY_COMBO.get(),
+                                        ModBlocks.WOOD_CROCKERY_COMBO.get(),
+                                        ModBlocks.TERRACOTTA_CROCKERY_COMBO.get()));
         public static final RegistryEntry<BlockEntityType<ContainerBlockEntity>> CONTAINER;
 
         static {

@@ -476,4 +476,5 @@ public class ModRecipeProvider extends RecipeProvider {
                                 .orElseThrow(() -> new IllegalArgumentException(
                                                 "Wool not found for: " + result.getId()));
         }
+
 }

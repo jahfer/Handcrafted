@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": ["minecraft:stick", "minecraft:stick"],
+  "result": {
+    "id": "minecraft:stick",
+    "count": 1
+  }
+}

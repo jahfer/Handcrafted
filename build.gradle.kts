@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.jvm.toolchain.JavaLanguageVersion
 import dev.architectury.plugin.ArchitectPluginExtension
 import groovy.json.StringEscapeUtils
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
@@ -57,7 +58,16 @@ subprojects {
     }
 
     java {
+        // Ensure Java 21 toolchain (required by Minecraft 1.21.2+ / Loom + Fabric ecosystem)
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(21))
+        }
         withSourcesJar()
+    }
+
+    // Also enforce release compatibility for any non-toolchain environments
+    tasks.withType<JavaCompile>().configureEach {
+        options.release.set(21)
     }
 
     tasks.jar {

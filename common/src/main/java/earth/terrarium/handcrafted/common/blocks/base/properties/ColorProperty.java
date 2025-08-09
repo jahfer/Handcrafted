@@ -1,7 +1,6 @@
 package earth.terrarium.handcrafted.common.blocks.base.properties;
 
 import earth.terrarium.handcrafted.Handcrafted;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
@@ -41,23 +40,26 @@ public enum ColorProperty implements StringRepresentable {
     }
 
     public static ColorProperty fromCushion(Item cushion) {
-        return ColorProperty.valueOf(BuiltInRegistries.ITEM.getKey(cushion).getPath().replace("_cushion", "").toUpperCase(Locale.ROOT));
+        return ColorProperty.valueOf(
+                BuiltInRegistries.ITEM.getKey(cushion).getPath().replace("_cushion", "").toUpperCase(Locale.ROOT));
     }
 
     public ItemStack toCushion() {
-        return BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(Handcrafted.MOD_ID, getSerializedName() + "_cushion"))
-                .map(Holder.Reference::value)
+        return BuiltInRegistries.ITEM
+                .getOptional(
+                        ResourceLocation.fromNamespaceAndPath(Handcrafted.MOD_ID, getSerializedName() + "_cushion"))
                 .map(ItemStack::new)
                 .orElse(ItemStack.EMPTY);
     }
 
     public static ColorProperty fromSheet(Item sheet) {
-        return ColorProperty.valueOf(BuiltInRegistries.ITEM.getKey(sheet).getPath().replace("_sheet", "").toUpperCase(Locale.ROOT));
+        return ColorProperty
+                .valueOf(BuiltInRegistries.ITEM.getKey(sheet).getPath().replace("_sheet", "").toUpperCase(Locale.ROOT));
     }
 
     public ItemStack toSheet() {
-        return BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(Handcrafted.MOD_ID, getSerializedName() + "_sheet"))
-                .map(Holder.Reference::value)
+        return BuiltInRegistries.ITEM
+                .getOptional(ResourceLocation.fromNamespaceAndPath(Handcrafted.MOD_ID, getSerializedName() + "_sheet"))
                 .map(ItemStack::new)
                 .orElse(ItemStack.EMPTY);
     }

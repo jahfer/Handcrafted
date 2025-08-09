@@ -9,3 +9,20 @@ dependencies {
     
     modCompileOnly(group = "tech.thatgravyboat", name = "commonats", version = "2.0")
 }
+
+// Exclude generated recipe JSONs from the common module artifact so that
+// loader-specific modules (e.g. fabric) can supply their transformed versions
+// without the invalid original schema causing parse errors at runtime.
+tasks.named<ProcessResources>("processResources") {
+    exclude("data/**/recipe/*.json")
+}
+
+// Also exclude at the sourceSet level so dev runtime (which uses source dirs)
+// does not see the original recipe JSONs.
+sourceSets {
+    named("main") {
+        resources {
+            exclude("data/**/recipe/*.json")
+        }
+    }
+}

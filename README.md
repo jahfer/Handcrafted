@@ -1,8 +1,13 @@
 # Handcrafted
 
+```
+$ ./gradlew :fabric:transpileRecipes :fabric:processResources :fabric:build
+```
+
 To add this library to your project, do the following:
 
 Kotlin DSL:
+
 ```kotlin
 repositories {
     maven(url = "https://maven.teamresourceful.com/repository/maven-public/")
@@ -14,6 +19,7 @@ dependencies {
 ```
 
 Groovy DSL:
+
 ```groovy
 repositories {
     maven {

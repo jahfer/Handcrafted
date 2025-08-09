@@ -7,6 +7,13 @@ import earth.terrarium.handcrafted.Handcrafted;
 import earth.terrarium.handcrafted.common.blockentities.ContainerBlockEntity;
 import earth.terrarium.handcrafted.common.blockentities.OvenBlockEntity;
 import earth.terrarium.handcrafted.common.blocks.crockery.CrockeryBlockEntity;
+import earth.terrarium.handcrafted.common.blocks.CounterBlock;
+import earth.terrarium.handcrafted.common.blocks.CupboardBlock;
+import earth.terrarium.handcrafted.common.blocks.DeskBlock;
+import earth.terrarium.handcrafted.common.blocks.DrawerBlock;
+import earth.terrarium.handcrafted.common.blocks.NightstandBlock;
+import earth.terrarium.handcrafted.common.blocks.ShelfBlock;
+import earth.terrarium.handcrafted.common.blocks.SideTableBlock;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -80,6 +87,7 @@ public class ModBlockEntityTypes {
         static {
                 List<RegistryEntry<net.minecraft.world.level.block.Block>> entries = new ArrayList<>();
 
+                // Original (currently empty) grouped registries
                 entries.addAll(ModBlocks.COUNTERS.getEntries());
                 entries.addAll(ModBlocks.CUPBOARDS.getEntries());
                 entries.addAll(ModBlocks.DESKS.getEntries());
@@ -87,6 +95,24 @@ public class ModBlockEntityTypes {
                 entries.addAll(ModBlocks.NIGHTSTANDS.getEntries());
                 entries.addAll(ModBlocks.SHELVES.getEntries());
                 entries.addAll(ModBlocks.SIDE_TABLES.getEntries());
+
+                // Fallback: many blocks were registered directly on BLOCKS instead of their
+                // subgroup
+                // Include any matching container block classes that are missing
+                for (RegistryEntry<net.minecraft.world.level.block.Block> entry : ModBlocks.BLOCKS.getEntries()) {
+                        net.minecraft.world.level.block.Block b = entry.get();
+                        if (b instanceof CounterBlock
+                                        || b instanceof CupboardBlock
+                                        || b instanceof DeskBlock
+                                        || b instanceof DrawerBlock
+                                        || b instanceof NightstandBlock
+                                        || b instanceof ShelfBlock
+                                        || b instanceof SideTableBlock) {
+                                if (!entries.contains(entry)) {
+                                        entries.add(entry);
+                                }
+                        }
+                }
 
                 CONTAINER = BLOCK_ENTITY_TYPES.register("container",
                                 () -> createBlockEntityType(ContainerBlockEntity::new,
